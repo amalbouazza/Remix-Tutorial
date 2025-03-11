@@ -1,15 +1,30 @@
-import { Form, redirect, useLoaderData } from "@remix-run/react";
-import { User, deleteUser, findUser } from "users";
+import { json, redirect } from "@remix-run/node";
+import { Form, useLoaderData } from "@remix-run/react";
+import { userCookie } from "~/utils/cookies.server";
 
-export const loader = async ({ params }: { params: { id: string } }) => {
-  const user = findUser(params.id);
+export const loader = async ({
+  params,
+  request,
+}: {
+  params: { id: string };
+  request: Request;
+}) => {
+  // Récupérer le cookie de l'utilisateur
+  const cookieHeader = request.headers.get("Cookie");
+  const user = await userCookie.parse(cookieHeader);
+
+  // Rediriger vers la page de connexion si l'utilisateur n'est pas connecté
   if (!user) {
     return redirect("/");
   }
 
-  return new Response(JSON.stringify(user), {
-    headers: { "Content-Type": "application/json" },
-  });
+  // Vérifier si l'utilisateur correspond à l'ID dans l'URL
+  if (user.id !== params.id) {
+    return redirect("/");
+  }
+
+  // Retourner les informations de l'utilisateur
+  return json({ user });
 };
 
 export const action = async ({
@@ -22,33 +37,28 @@ export const action = async ({
   const formData = await request.formData();
   const actionType = formData.get("action");
 
-  if (actionType === "logout") {
-    return redirect("/");
-  }
-
-  if (actionType === "delete") {
-    deleteUser(params.id);
-    return redirect("/");
+  if (actionType === "logout" || actionType === "delete") {
+    // Supprimer le cookie
+    return redirect("/", {
+      headers: {
+        "Set-Cookie": await userCookie.serialize(null, {
+          maxAge: 0, // Supprimer le cookie
+        }),
+      },
+    });
   }
 };
 
-const Profile = () => {
-  const user = useLoaderData<User>();
+export default function Profile() {
+  const { user } = useLoaderData<typeof loader>();
 
-  const handleClientSideLogout = (action: string) => {
-    if (action === "logout" || action === "delete") {
-      localStorage.removeItem("userLogged");
-    }
-  };
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-100">
       <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-md">
-        <h1 className="text-2xl font-bold text-gray-800">
-          Welcome, {user.name}!
-        </h1>
-        <p className="text-gray-600 mt-2">Email: {user.email}</p>
+        <h1 className="text-2xl font-bold text-gray-800">Profil</h1>
+        <p className="text-gray-600 mt-2">Bienvenue, {user.name} !</p>
         <div className="mt-6 flex space-x-4">
-          <Form method="post" onSubmit={() => handleClientSideLogout("logout")}>
+          <Form method="post">
             <input type="hidden" name="action" value="logout" />
             <button
               type="submit"
@@ -57,8 +67,7 @@ const Profile = () => {
               Logout
             </button>
           </Form>
-
-          <Form method="post" onSubmit={() => handleClientSideLogout("delete")}>
+          <Form method="post">
             <input type="hidden" name="action" value="delete" />
             <button
               type="submit"
@@ -71,6 +80,4 @@ const Profile = () => {
       </div>
     </div>
   );
-};
-
-export default Profile;
+}
