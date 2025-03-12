@@ -21,4 +21,7 @@ export default defineConfig({
     }),
     tsconfigPaths(),
   ],
+  esbuild: {
+    loader: "tsx", // Assurez-vous qu'ESBuild traite les fichiers .tsx
+  },
 });
