@@ -1,6 +1,8 @@
 import { useState } from "react";
 import JSZip from "jszip";
-import { saveAs } from "file-saver";
+//import { saveAs } from "file-saver";
+import fileSaver from "file-saver"; // Importez le module par défaut
+const { saveAs } = fileSaver; // Destructurez `saveAs` depuis l'objet importé
 
 export default function DatasetExport() {
   const [files, setFiles] = useState<File[]>([]);
