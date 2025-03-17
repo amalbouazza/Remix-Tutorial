@@ -23,7 +23,7 @@ export const links: LinksFunction = () => [
   },
 ];
 
-export function Layout({ children }: { children: React.ReactNode }) {
+export function Layout({ children, showHeader = true }: { children: React.ReactNode; showHeader?: boolean }) {
   return (
     <html lang="en">
       <head>
@@ -33,8 +33,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body className="bg-gray-100 min-h-screen">
-        {/* Ajoutez le Header ici */}
-        <Header />
+        {/* Afficher le Header conditionnellement */}
+        {showHeader && <Header />}
 
         {/* Conteneur principal pour le contenu */}
         <main className="p-6">
@@ -45,13 +45,5 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Scripts />
       </body>
     </html>
-  );
-}
-
-export default function App() {
-  return (
-    <Layout>
-      <Outlet />
-    </Layout>
   );
 }
